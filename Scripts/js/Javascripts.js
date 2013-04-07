@@ -1,14 +1,14 @@
 // Engine
-document.writeln("<script src='Scripts/js/Engine.js'></script>");
-document.writeln("<script src='Scripts/js/Cursor.js'></script>");
-document.writeln("<script src='Scripts/js/Text.js'></script>");
+document.writeln("<script src='Scripts/js/Framework/Engine.js'></script>");
+document.writeln("<script src='Scripts/js/Framework/Cursor.js'></script>");
+document.writeln("<script src='Scripts/js/Framework/Text.js'></script>");
 
 // Managers
-document.writeln("<script src='Scripts/js/Managers/DrawManager.js'></script>");
-document.writeln("<script src='Scripts/js/Managers/MouseEventManager.js'></script>");
+document.writeln("<script src='Scripts/js/Framework/Managers/DrawManager.js'></script>");
+document.writeln("<script src='Scripts/js/Framework/Managers/MouseEventManager.js'></script>");
 
 
 // Gameplay
-document.writeln("<script src='Scripts/js/Cards/Card.js'></script>");
-document.writeln("<script src='Scripts/js/Cards/CardStack.js'></script>");
-document.writeln("<script src='Scripts/js/Game.js'></script>");
+document.writeln("<script src='Scripts/js/Game/Cards/Card.js'></script>");
+document.writeln("<script src='Scripts/js/Game/Cards/CardStack.js'></script>");
+document.writeln("<script src='Scripts/js/Game/Game.js'></script>");
