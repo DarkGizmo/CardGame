@@ -81,9 +81,11 @@ function Card(psCardImagePath)
 		}
 	}
 	
-	this.onMouseOver = function()
+	this.onMouseIn = function()
 	{
 		this.updateCursor();
+		
+		return true;
 	}
 	
 	this.onMouseOut = function()
@@ -96,6 +98,8 @@ function Card(psCardImagePath)
 		if(piButton == MouseClickType.eLeftClick)
 		{
 			this.updateCursor();
+			
+			return true;
 		}
 	}
 	
@@ -114,6 +118,8 @@ function Card(psCardImagePath)
 				
 				moNewCardStack = null;
 				moOldCardStack = null;
+				
+				moMouseEventComponent.setZOrder(0);
 			}
 			
 			this.updateCursor();
@@ -131,9 +137,13 @@ function Card(psCardImagePath)
 				moNewCardStack.setPosition(this.fPositionX, this.fPositionY);
 				moNewCardStack.pushCard(this.oParentStack.popCard());
 				moNewCardStack.bBeingMoved = true;
+				
+				moMouseEventComponent.setZOrder(100);
 			}
 			
 			moNewCardStack.onMouseDrag(piButton, pfDeltaMoveX, pfDeltaMoveY);
+			
+			return true;
 		}
 	}
 	

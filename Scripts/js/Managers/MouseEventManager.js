@@ -4,9 +4,9 @@ MouseClickType.eMiddleClick = 1;
 MouseClickType.eRightClick = 2;
 
 /**
-	Support function for Owner: onMouseOver, onMouseOut, onMouseDown, onMouseUp, onMouseDrag, onMouseWheel
+	Support function for Owner: onMouseOver, onMouseIn, onMouseOut, onMouseDown, onMouseUp, onMouseDrag, onMouseWheel
 */
-function MouseEventComponent(poOwner, pfTop, pfLeft, pfWidth, pfHeight)
+function MouseEventComponent(poOwner, pfTop, pfLeft, pfWidth, pfHeight, piZOrder)
 {
 	this.moOwner = poOwner;
 	this.mfTop = pfTop;
@@ -18,12 +18,36 @@ function MouseEventComponent(poOwner, pfTop, pfLeft, pfWidth, pfHeight)
 	this.tbMouseDown = [];
 	this.toMousePosition = [];
 	
-	this.update = function(pfTop, pfLeft, pfWidth, pfHeight)
+	var miZOrder = 0;
+	
+	if(piZOrder != null)
+	{
+		miZOrder = piZOrder;
+	}
+	
+	this.getZOrder = function()
+	{
+		return miZOrder;
+	}
+	
+	this.setZOrder = function(piZOrder)
+	{
+		miZOrder = piZOrder;
+		goMouseEventManagerInstance.sortComponents();
+	}
+	
+	this.update = function(pfTop, pfLeft, pfWidth, pfHeight, piZOrder)
 	{
 		this.mfTop = pfTop;
 		this.mfLeft = pfLeft;
 		this.mfRight = pfLeft + pfWidth;
 		this.mfBottom = pfTop + pfHeight;
+		
+		if(piZOrder != null && miZOrder != piZOrder)
+		{
+			miZOrder = piZOrder;
+			goMouseEventManagerInstance.sortComponents();
+		}
 	}
 }
 
@@ -72,21 +96,42 @@ function MouseEventManager()
 		alert("Couldn't remove specified Mouse Event Component");
 	}
 	
+	function sortFunction(poComponentA, poComponentB)
+	{
+		return poComponentA.getZOrder() < poComponentB.getZOrder();
+	}
+	
+	this.sortComponents = function()
+	{
+		this.toMouseEventComponents.sort(sortFunction);
+	}
+	
 	this.isMouseInsideComponent = function(pfMousePosX, pfMousePosY, poComponent)
 	{
 		return 	pfMousePosX >= poComponent.mfLeft && pfMousePosX <= poComponent.mfRight && 
 				pfMousePosY >= poComponent.mfTop && pfMousePosY <= poComponent.mfBottom;
 	}
 	
-	this.updateMouseMove = function(pfMousePosX, pfMousePosY, poComponent)
+	this.updateMouseOver = function(pfMousePosX, pfMousePosY, poComponent)
 	{
 		var bIsMouseInside = this.isMouseInsideComponent(pfMousePosX, pfMousePosY, poComponent);
-		if(bIsMouseInside && !poComponent.bMouseOver)
+		var bReturnValue = bIsMouseInside;
+		if(bIsMouseInside)
 		{
+			var bWasMouseOver = poComponent.bMouseOver;
 			poComponent.bMouseOver = true;
+			
+			if(!bWasMouseOver)
+			{
+				if(poComponent.moOwner.onMouseIn)
+				{
+					bReturnValue = poComponent.moOwner.onMouseIn();
+				}
+			}
+			
 			if(poComponent.moOwner.onMouseOver)
 			{
-				poComponent.moOwner.onMouseOver();
+				bReturnValue = bReturnValue || poComponent.moOwner.onMouseOver();
 			}
 		}
 		else if (!bIsMouseInside && poComponent.bMouseOver)
@@ -94,14 +139,16 @@ function MouseEventManager()
 			poComponent.bMouseOver = false;
 			if(poComponent.moOwner.onMouseOut)
 			{
-				poComponent.moOwner.onMouseOut();
+				bReturnValue = poComponent.moOwner.onMouseOut();
 			}			
 		}
 		
-		if(poComponent.moOwner.onMouseMove)
+		if(bReturnValue == null)
 		{
-			poComponent.moOwner.onMouseMove(pfMousePosX, pfMousePosY);
+			bReturnValue = false;
 		}
+		
+		return bReturnValue;
 	};
 	
 	this.updateMouseDrag = function(piButton, pfMousePosX, pfMousePosY, poComponent)
@@ -122,15 +169,25 @@ function MouseEventManager()
 	
 	this.updateMousePosition = function(pfMousePosX, pfMousePosY)
 	{
+		var bMouseOverUpdateDone = false;
 		for(var i = 0; i < this.toMouseEventComponents.length; ++i)
 		{
-			this.updateMouseMove(pfMousePosX, pfMousePosY, this.toMouseEventComponents[i]);
+			var oComponent = this.toMouseEventComponents[i];
+			if(!bMouseOverUpdateDone)
+			{
+				bMouseOverUpdateDone = this.updateMouseOver(pfMousePosX, pfMousePosY, oComponent);
+			}
+			
+			if(oComponent.moOwner.onMouseMove)
+			{
+				oComponent.moOwner.onMouseMove(pfMousePosX, pfMousePosY);
+			}
 			
 			for(var j = 0; j < this.tbButtonDown.length; ++j)
 			{
 				if(this.tbButtonDown[j])
 				{
-					this.updateMouseDrag(j, pfMousePosX, pfMousePosY, this.toMouseEventComponents[i]);
+					this.updateMouseDrag(j, pfMousePosX, pfMousePosY, oComponent);
 				}
 			}
 		}
