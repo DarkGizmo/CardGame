@@ -9,10 +9,7 @@ MouseClickType.eRightClick = 2;
 function MouseEventComponent(poOwner, pfTop, pfLeft, pfWidth, pfHeight, piZOrder)
 {
 	this.moOwner = poOwner;
-	this.mfTop = pfTop;
-	this.mfLeft = pfLeft;
-	this.mfRight = pfLeft + pfWidth;
-	this.mfBottom = pfTop + pfHeight;
+	this.oRectangle = new Rectangle(pfTop, pfLeft, pfWidth, pfHeight);
 	
 	this.bMouseOver = false;
 	this.tbMouseDown = [];
@@ -38,10 +35,7 @@ function MouseEventComponent(poOwner, pfTop, pfLeft, pfWidth, pfHeight, piZOrder
 	
 	this.update = function(pfTop, pfLeft, pfWidth, pfHeight, piZOrder)
 	{
-		this.mfTop = pfTop;
-		this.mfLeft = pfLeft;
-		this.mfRight = pfLeft + pfWidth;
-		this.mfBottom = pfTop + pfHeight;
+		this.oRectangle.updateBounds(pfLeft, pfTop, pfWidth, pfHeight);
 		
 		if(piZOrder != null && miZOrder != piZOrder)
 		{
@@ -108,8 +102,7 @@ function MouseEventManager()
 	
 	this.isMouseInsideComponent = function(pfMousePosX, pfMousePosY, poComponent)
 	{
-		return 	pfMousePosX >= poComponent.mfLeft && pfMousePosX <= poComponent.mfRight && 
-				pfMousePosY >= poComponent.mfTop && pfMousePosY <= poComponent.mfBottom;
+		return poComponent.oRectangle.isInside(pfMousePosX, pfMousePosY);
 	}
 	
 	this.updateMouseOver = function(pfMousePosX, pfMousePosY, poComponent)
