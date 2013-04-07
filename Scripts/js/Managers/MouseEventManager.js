@@ -248,26 +248,29 @@ var goMouseEventManagerInstance = new MouseEventManager();
 
 function initializeMouseEventManager()
 {
-	var oContainer = document.getElementById('container');
+	var oContainer = document.getElementById('canvas');
 	
 	oContainer.addEventListener( "mousemove",
 		function(e)
 		{
-			goMouseEventManagerInstance.updateMousePosition(e.pageX, e.pageY);
+			var oContainer = document.getElementById('canvas');
+			goMouseEventManagerInstance.updateMousePosition(e.pageX - oContainer.offsetLeft, e.pageY - oContainer.offsetTop);
 		}, false 
 	);
 	
 	oContainer.addEventListener( "mousedown",
 		function(e)
 		{
-			goMouseEventManagerInstance.updateMouseClick(e.pageX, e.pageY, e.button, true);
+			var oContainer = document.getElementById('canvas');
+			goMouseEventManagerInstance.updateMouseClick(e.pageX - oContainer.offsetLeft, e.pageY - oContainer.offsetTop, e.button, true);
 		}, false 
 	);
 	
 	oContainer.addEventListener( "mouseup",
 		function(e)
 		{
-			goMouseEventManagerInstance.updateMouseClick(e.pageX, e.pageY, e.button, false);
+			var oContainer = document.getElementById('canvas');
+			goMouseEventManagerInstance.updateMouseClick(e.pageX - oContainer.offsetLeft, e.pageY - oContainer.offsetTop, e.button, false);
 		}, false 
 	);
 	
