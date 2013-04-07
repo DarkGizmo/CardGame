@@ -1,5 +1,7 @@
 function initializeGame()
 {
+	goDrawManagerInstance.SetBackground("Assets/Images/Background.png");
+	
 	var cardLot = new CardStack(CardStackStyling.StaminaBar);
 	var cardLot2 = new CardStack(CardStackStyling.SimpleStack);
 	
