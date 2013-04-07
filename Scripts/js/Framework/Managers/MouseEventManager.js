@@ -202,7 +202,7 @@ function MouseEventManager()
 					
 					if(oComponent.moOwner.onMouseDown)
 					{
-						oComponent.moOwner.onMouseDown(piButton);
+						oComponent.moOwner.onMouseDown(piButton, pfMousePosX, pfMousePosY);
 					}
 					
 					if(oComponent.toMousePosition[piButton] == null)
@@ -218,7 +218,7 @@ function MouseEventManager()
 				oComponent.tbMouseDown[piButton] = false;
 				if(oComponent.moOwner.onMouseUp)
 				{
-					oComponent.moOwner.onMouseUp(piButton);
+					oComponent.moOwner.onMouseUp(piButton, pfMousePosX, pfMousePosY);
 				}
 			}
 		}
