@@ -12,6 +12,8 @@ function DrawManager()
 {
 	this.toDrawComponents = [];
 	
+	var moBackgroundImage = null;
+	
 	this.addComponent = function(poOwner, pfZOrder)
 	{
 		var oComponent = null;
@@ -60,6 +62,32 @@ function DrawManager()
 	{
 		this.toDrawComponents.sort(sortFunction);
 	}
+	
+	this.Update = function()
+	{
+		goCanvas.clearRect(0, 0, giScreenWidth, giScreenHeight)
+		goCanvas.save();
+		
+		if(moBackgroundImage != null)
+		{
+			goCanvas.drawImage(moBackgroundImage,0,0);
+		}
+		
+		
+		for(var i = 0; i < goDrawManagerInstance.toDrawComponents.length; ++i)
+		{
+			if(goDrawManagerInstance.toDrawComponents[i].oOwner.draw != null)
+			{
+				goDrawManagerInstance.toDrawComponents[i].oOwner.draw(goCanvas);
+			}
+		}
+	}
+	
+	this.SetBackground = function(psPath)
+	{
+		moBackgroundImage = new Image();
+		moBackgroundImage.src = psPath;
+	}
 }
 
 function initializeDrawManager()
@@ -73,16 +101,7 @@ function initializeDrawManager()
 	
 function updateDrawManager()
 {
-	goCanvas.clearRect(0, 0, giScreenWidth, giScreenHeight)
-	goCanvas.save();
-	
-	for(var i = 0; i < goDrawManagerInstance.toDrawComponents.length; ++i)
-	{
-		if(goDrawManagerInstance.toDrawComponents[i].oOwner.draw != null)
-		{
-			goDrawManagerInstance.toDrawComponents[i].oOwner.draw(goCanvas);
-		}
-	}
+	goDrawManagerInstance.Update();
 }
 
 var goDrawManagerInstance = new DrawManager();
