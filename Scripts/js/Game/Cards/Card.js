@@ -67,13 +67,20 @@ function Card(psCardImagePath)
 	
 	this.updateCursor = function()
 	{
-		if(moMouseEventComponent.tbMouseDown[MouseClickType.eLeftClick])
+		if(moMouseEventComponent != null)
 		{
-			setCursorStyle("url(Assets/Images/UI/DragCursor.png)");
-		}
-		else if(moMouseEventComponent.bMouseOver)
-		{
-			setCursorStyle("url(Assets/Images/UI/GrabCursor.png)");
+			if(moMouseEventComponent.tbMouseDown[MouseClickType.eLeftClick])
+			{
+				setCursorStyle("url(Assets/Images/UI/DragCursor.png)");
+			}
+			else if(moMouseEventComponent.bMouseOver)
+			{
+				setCursorStyle("url(Assets/Images/UI/GrabCursor.png)");
+			}
+			else
+			{
+				setCursorStyle("auto");
+			}
 		}
 		else
 		{
@@ -93,7 +100,7 @@ function Card(psCardImagePath)
 		this.updateCursor();
 	}
 	
-	this.onMouseDown = function(piButton)
+	this.onMouseDown = function(piButton, pfPositionX, pfPositionY)
 	{
 		if(piButton == MouseClickType.eLeftClick)
 		{
@@ -103,23 +110,43 @@ function Card(psCardImagePath)
 		}
 	}
 	
-	this.onMouseUp = function(piButton)
+	this.onMouseUp = function(piButton, pfPositionX, pfPositionY)
 	{
 		if(piButton == MouseClickType.eLeftClick)
 		{
 			if(moNewCardStack != null)
 			{
-				moNewCardStack.popCard();
-				while(moNewCardStack.getCardCount() != 0)
+				var bValidCardSlot = false;
+				var oCardSlot = goCardStackManager.getCardSlotAtPosition(pfPositionX, pfPositionY);
+				
+				if(oCardSlot != null)
 				{
-					moOldCardStack.pushCard(moNewCardStack.popCard());
+					bValidCardSlot = oCardSlot.validate(moNewCardStack);
 				}
-				moOldCardStack.pushCard(this);
+				
+				if(!bValidCardSlot)
+				{
+					moNewCardStack.popCard();
+					while(moNewCardStack.getCardCount() != 0)
+					{
+						moOldCardStack.pushCard(moNewCardStack.popCard());
+					}
+					moOldCardStack.pushCard(this);
+				}
+				else
+				{
+					oCardSlot.assignCardStack(moNewCardStack);
+					moNewCardStack.bBeingMoved = false;
+				}
 				
 				moNewCardStack = null;
 				moOldCardStack = null;
 				
-				moMouseEventComponent.setZOrder(0);
+				// This might have been invalidate if the card has changed stack
+				if(moMouseEventComponent != null)
+				{
+					moMouseEventComponent.setZOrder(0);
+				}
 			}
 			
 			this.updateCursor();
@@ -133,7 +160,7 @@ function Card(psCardImagePath)
 			if(moNewCardStack == null)
 			{
 				moOldCardStack = this.oParentStack;
-				moNewCardStack = new CardStack(CardStackStyling.DragStack);
+				moNewCardStack = new CardStack(CardStackStyling.DragStack, true);
 				moNewCardStack.setPosition(this.fPositionX, this.fPositionY);
 				moNewCardStack.pushCard(this.oParentStack.popCard());
 				moNewCardStack.bBeingMoved = true;

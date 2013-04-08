@@ -18,5 +18,8 @@ function initializeGame()
 		cardLot2.pushCard(new Card("Assets/Images/Card.png"));
 	}
 	cardLot2.setPosition(250, 100);
+	
+	var cardLot3 = new CardStack(CardStackStyling.CardSlot);
+	cardLot3.setPosition(600, 100);
 }
 gtfInitializationFunctions.push(initializeGame);
