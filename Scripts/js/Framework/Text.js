@@ -3,6 +3,7 @@ var FontTypes = {};
 FontTypes.oCard = new function()
 {
 	this.sfont = '60px san-serif';
+	this.sFillStyle = '#0';
 	this.sStrokeStyle = '#ffffff';
 }
 
@@ -19,13 +20,10 @@ Text.drawText = function(poCanvas, psString, pfPositionX, pfPositionY, poFontTyp
 		poCanvas.fillStyle = poFontType.sFillStyle;
 		poCanvas.fillText(psString, pfPositionX, pfPositionY);
 	}
-	else if(poFontType.sStrokeStyle)
+	
+	if(poFontType.sStrokeStyle)
 	{
 		poCanvas.strokeStyle = poFontType.sStrokeStyle;
 		poCanvas.strokeText(psString, pfPositionX, pfPositionY);
-	}
-	else
-	{
-		alert("FontType given was invalid");
 	}
 }
