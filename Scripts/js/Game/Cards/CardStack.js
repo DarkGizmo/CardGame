@@ -3,6 +3,7 @@ var CardStackStyling = { };
 
 CardStackStyling.oHealthBar = new function()
 {
+	this.sBackgroundImagePath = "";
 	this.fHorizontalSpacing = 6.0;
 	this.fVerticalSpacing = 0.0;
 	this.bRelativeToTopCard = false;
@@ -10,6 +11,7 @@ CardStackStyling.oHealthBar = new function()
 
 CardStackStyling.StaminaBar = new function()
 {
+	this.sBackgroundImagePath = "";
 	this.fHorizontalSpacing = 0.0;
 	this.fVerticalSpacing = -6.0;
 	this.bRelativeToTopCard = false;
@@ -17,6 +19,7 @@ CardStackStyling.StaminaBar = new function()
 
 CardStackStyling.SimpleStack = new function()
 {
+	this.sBackgroundImagePath = "";
 	this.fHorizontalSpacing = 3.0;
 	this.fVerticalSpacing = -3.0;
 	this.bRelativeToTopCard = false;
@@ -24,28 +27,43 @@ CardStackStyling.SimpleStack = new function()
 
 CardStackStyling.DragStack = new function()
 {
+	this.sBackgroundImagePath = "";
 	this.fHorizontalSpacing = 0.0;
 	this.fVerticalSpacing = 3.0;
 	this.bRelativeToTopCard = true;
 }
 
-function CardStack(poCardStackStyle)
+CardStackStyling.CardSlot = new function()
+{
+	this.sBackgroundImagePath = "Assets/Images/CardSlot.png";
+	this.fHorizontalSpacing = 0.0;
+	this.fVerticalSpacing = 3.0;
+	this.bRelativeToTopCard = false;
+}
+
+function CardStack(poCardStackStyle, pbTemporary)
 {
 	this.bBeingMoved = false;
 	
 	var mtoCards = [];
 	var mfPositionX = 0.0;
 	var mfPositionY = 0.0;
-	
 	var moDrawComponent = goDrawManagerInstance.addComponent(this, 0);
+	var moBackgroundImage; // Initialize later
+	var moStyle = poCardStackStyle;
+	var moStackDropRectangle = null;
+	var mbTemporary = pbTemporary != null ? pbTemporary : false;
 	
-	if(poCardStackStyle == null)
+	if(moStyle == null)
 	{
-		poCardStackStyle = CardStackStyling.oHealthBar();
+		moStyle = CardStackStyling.oHealthBar();
 	}
-	var fHorizontalSpacing 	= poCardStackStyle.fHorizontalSpacing;
-	var fVerticalSpacing 	= poCardStackStyle.fVerticalSpacing;
-	var bRelativeToTopCard 	= poCardStackStyle.bRelativeToTopCard;
+
+	if(moStyle.sBackgroundImagePath != null && moStyle.sBackgroundImagePath != "")
+	{
+		moBackgroundImage = new Image();
+		moBackgroundImage.src = moStyle.sBackgroundImagePath;
+	}
 	
 	this.setPosition = function(pfNewPositionX, pfNewPositionY)
 	{
@@ -55,17 +73,28 @@ function CardStack(poCardStackStyle)
 		{
 			this.positionCard(mtoCards[i], i);
 		}
+		
+		this.updateCardSlotRectangle();
 	};
 	
 	this.positionCard = function(poCard, Index)
 	{
-		if(bRelativeToTopCard)
+		if(moStyle.bRelativeToTopCard)
 		{
-			Index = (mtoCards.length - Index);
+			Index = (mtoCards.length - Index - 1);
 		}
 		
-		poCard.fPositionX = mfPositionX + fHorizontalSpacing * Index;
-		poCard.fPositionY = mfPositionY + fVerticalSpacing * Index;
+		var offsetX = 0.0;
+		var offsetY = 0.0;
+		
+		if(moBackgroundImage != null)
+		{
+			offsetX = (moBackgroundImage.width - poCard.getSize().x) * 0.5;
+			offsetY = (moBackgroundImage.height - poCard.getSize().y) * 0.5;
+		}
+		
+		poCard.fPositionX = mfPositionX + offsetX + moStyle.fHorizontalSpacing * Index;
+		poCard.fPositionY = mfPositionY + offsetY + moStyle.fVerticalSpacing * Index;
 	}
 	
 	this.getCardCount = function()
@@ -87,6 +116,8 @@ function CardStack(poCardStackStyle)
 		
 		poCard.sText = mtoCards.length.toString();
 		poCard.oParentStack = this;
+		
+		this.updateCardSlotRectangle();
 	}
 	
 	this.popCard = function()
@@ -105,11 +136,17 @@ function CardStack(poCardStackStyle)
 			this.positionCard(mtoCards[i], i);
 		}
 		
+		this.updateCardSlotRectangle();
+		
 		return oCard;
 	}
 	
 	this.draw = function(poCanvas)
 	{
+		if(moBackgroundImage != null)
+		{
+			poCanvas.drawImage(moBackgroundImage, mfPositionX, mfPositionY);
+		}
 		if(this.bBeingMoved)
 		{
 			poCanvas.save();
@@ -136,4 +173,81 @@ function CardStack(poCardStackStyle)
 			this.setPosition(mfPositionX + pfDeltaMoveX, mfPositionY + pfDeltaMoveY);
 		}
 	}
+	
+	this.isPositionOnCardStack = function(pfPositionX, pfPositionY)
+	{
+		if(moStackDropRectangle)
+		{
+			return moStackDropRectangle.isInside(pfPositionX, pfPositionY);
+		}
+		
+		return false;
+	}
+	
+	this.updateCardSlotRectangle = function()
+	{
+		if(mbTemporary)
+		{
+			return;	// Nothing to do
+		}
+		
+		if(mtoCards.length == 0)
+		{
+			// We have no card
+			if(moBackgroundImage != null)
+			{
+				// but we have a background
+				if(moStackDropRectangle == null)
+				{
+					// Use background as the drop rectangle
+					moStackDropRectangle = new Rectangle(0,0,0,0);
+					goCardStackManager.registerCardSlot(this);
+				}
+				moStackDropRectangle.updateBounds(mfPositionX, mfPositionY, moBackgroundImage.width, moBackgroundImage.height);
+			}
+			else if(moStackDropRectangle != null)
+			{
+				// We have no background, remove the drop rectangle
+				moStackDropRectangle = null;
+				goCardStackManager.unregisterCardSlot(this);
+			}
+		}
+		else
+		{
+			// We have cards
+
+			if(moStackDropRectangle == null)
+			{
+				// But no drop rectangle
+				// Create one
+				moStackDropRectangle = new Rectangle(0,0,0,0);
+				goCardStackManager.registerCardSlot(this);
+			}
+			
+			// The drop rectangle is suppose to be on the last card
+			var oLastCard = mtoCards[mtoCards.length - 1];
+			moStackDropRectangle.updateBounds(oLastCard.fPositionX, oLastCard.fPositionY, oLastCard.getSize().x, oLastCard.getSize().y)
+		}
+	}
+	
+	this.validate = function(poCardStack)
+	{
+		var bValid = false;
+		if(poCardStack != null)
+		{
+			// Validate that this slot in unoccupied
+			bValid = this.oCurrentStack == null;
+		}
+		return bValid;
+	}
+	
+	this.assignCardStack = function(poCardStack)
+	{
+		while(poCardStack.getCardCount() > 0)
+		{
+			this.pushCard(poCardStack.popCard());
+		}
+	}
+	
+	this.updateCardSlotRectangle();
 };
