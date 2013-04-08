@@ -37,22 +37,30 @@ function Card(psCardImagePath)
 		return mbFaceUp;
 	}
 	
-	this.setFaceUp = function(pbNewFaceUp)
+	this.setFaceUp = function(pbNewFaceUp, pbEnableDrag)
 	{
+		if(pbEnableDrag == null)
+		{
+			pbEnableDrag = false;
+		}
+		
 		if(mbFaceUp != pbNewFaceUp)
 		{
 			mbFaceUp = pbNewFaceUp;
-			if(!mbFaceUp)
+			
+			if(pbEnableDrag)
 			{
-				goMouseEventManagerInstance.removeComponent(this);
-				moMouseEventComponent = null;
+				if(!mbFaceUp)
+				{
+					goMouseEventManagerInstance.removeComponent(this);
+					moMouseEventComponent = null;
+				}
+				else
+				{
+					moMouseEventComponent = 
+					goMouseEventManagerInstance.addComponent(this, this.fPositionY, this.fPositionX, this.getSize().x, this.getSize().y);
+				}
 			}
-			else
-			{
-				moMouseEventComponent = 
-				goMouseEventManagerInstance.addComponent(this, this.fPositionY, this.fPositionX, this.getSize().x, this.getSize().y);
-			}
-			mbShouldDrawText = mbFaceUp;
 		}
 	};
 	
@@ -160,7 +168,7 @@ function Card(psCardImagePath)
 			if(moNewCardStack == null)
 			{
 				moOldCardStack = this.oParentStack;
-				moNewCardStack = new CardStack(CardStackStyling.DragStack, true);
+				moNewCardStack = new CardStack(CardStackStyling.VisualStyle.oDragStack, CardStackStyling.InteractiveStyle.oDragStack);
 				moNewCardStack.setPosition(this.fPositionX, this.fPositionY);
 				moNewCardStack.pushCard(this.oParentStack.popCard());
 				moNewCardStack.bBeingMoved = true;
@@ -180,7 +188,8 @@ function Card(psCardImagePath)
 		{
 			if(piDelta > 0)
 			{
-				if(moOldCardStack.getCardCount() > 0)
+				var iCardSpotLeft = moOldCardStack.getDropOutMaxCount() - this.oParentStack.getCardCount();
+				if(moOldCardStack.getCardCount() > 0 && iCardSpotLeft != 0)
 				{
 					moNewCardStack.popCard();
 					moNewCardStack.pushCard(moOldCardStack.popCard());

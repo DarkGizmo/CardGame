@@ -1,7 +1,17 @@
 
-var CardStackStyling = { };
+var CardStackStyling = {};
 
-CardStackStyling.oHealthBar = new function()
+CardStackStyling.VisualStyle = {};
+
+CardStackStyling.VisualStyle.oDefault = new function()
+{
+	this.sBackgroundImagePath = "";
+	this.fHorizontalSpacing = 2.0;
+	this.fVerticalSpacing = -2.0;
+	this.bRelativeToTopCard = false;
+}
+
+CardStackStyling.VisualStyle.oHealthBar = new function()
 {
 	this.sBackgroundImagePath = "";
 	this.fHorizontalSpacing = 6.0;
@@ -9,15 +19,7 @@ CardStackStyling.oHealthBar = new function()
 	this.bRelativeToTopCard = false;
 }
 
-CardStackStyling.StaminaBar = new function()
-{
-	this.sBackgroundImagePath = "";
-	this.fHorizontalSpacing = 0.0;
-	this.fVerticalSpacing = -6.0;
-	this.bRelativeToTopCard = false;
-}
-
-CardStackStyling.SimpleStack = new function()
+CardStackStyling.VisualStyle.oSimpleStack = new function()
 {
 	this.sBackgroundImagePath = "";
 	this.fHorizontalSpacing = 3.0;
@@ -25,7 +27,7 @@ CardStackStyling.SimpleStack = new function()
 	this.bRelativeToTopCard = false;
 }
 
-CardStackStyling.DragStack = new function()
+CardStackStyling.VisualStyle.oDragStack = new function()
 {
 	this.sBackgroundImagePath = "";
 	this.fHorizontalSpacing = 0.0;
@@ -33,7 +35,7 @@ CardStackStyling.DragStack = new function()
 	this.bRelativeToTopCard = true;
 }
 
-CardStackStyling.CardSlot = new function()
+CardStackStyling.VisualStyle.oCardSlot = new function()
 {
 	this.sBackgroundImagePath = "Assets/Images/CardSlot.png";
 	this.fHorizontalSpacing = 0.0;
@@ -41,7 +43,57 @@ CardStackStyling.CardSlot = new function()
 	this.bRelativeToTopCard = false;
 }
 
-function CardStack(poCardStackStyle, pbTemporary)
+CardStackStyling.InteractiveStyle = {};
+
+CardStackStyling.InteractiveStyle.oDefault = new function()
+{
+	this.bDropOut = false;
+	this.iDropOutMaxCount = 0;
+	this.bDropIn = false;
+	this.iDropInMaxCount = 0;
+}
+
+CardStackStyling.InteractiveStyle.oDragStack = new function()
+{
+	this.bDropOut = false;
+	this.iDropOutMaxCount = 0;
+	this.bDropIn = false;
+	this.iDropInMaxCount = 0;
+}
+
+CardStackStyling.InteractiveStyle.oSingleCardSlot = new function()
+{
+	this.bDropOut = true;
+	this.iDropOutMaxCount = 1;
+	this.bDropIn = true;
+	this.iDropInMaxCount = 1;
+}
+
+CardStackStyling.InteractiveStyle.oMultipleCardSlot = new function()
+{
+	this.bDropOut = true;
+	this.iDropOutMaxCount = -1;
+	this.bDropIn = true;
+	this.iDropInMaxCount = -1;
+}
+
+CardStackStyling.InteractiveStyle.oSingleDragCardStack = new function()
+{
+	this.bDropOut = true;
+	this.iDropOutMaxCount = 1;
+	this.bDropIn = true;
+	this.iDropInMaxCount = -1;
+}
+
+CardStackStyling.InteractiveStyle.oMultipleDragCardStack = new function()
+{
+	this.bDropOut = true;
+	this.iDropOutMaxCount = -1;
+	this.bDropIn = true;
+	this.iDropInMaxCount = -1;
+}
+
+function CardStack(poCardStackVisualStyle, poCardStackInteractiveStyle)
 {
 	this.bBeingMoved = false;
 	
@@ -50,19 +102,24 @@ function CardStack(poCardStackStyle, pbTemporary)
 	var mfPositionY = 0.0;
 	var moDrawComponent = goDrawManagerInstance.addComponent(this, 0);
 	var moBackgroundImage; // Initialize later
-	var moStyle = poCardStackStyle;
+	var moVisualStyle = poCardStackVisualStyle;
+	var moInteractiveStyle = poCardStackInteractiveStyle;
 	var moStackDropRectangle = null;
-	var mbTemporary = pbTemporary != null ? pbTemporary : false;
 	
-	if(moStyle == null)
+	if(moVisualStyle == null)
 	{
-		moStyle = CardStackStyling.oHealthBar();
+		moVisualStyle = CardStackStyling.VisualStyle.oDefault;
+	}
+	
+	if(moInteractiveStyle == null)
+	{
+		moInteractiveStyle = CardStackStyling.InteractiveStyle.oDefault;
 	}
 
-	if(moStyle.sBackgroundImagePath != null && moStyle.sBackgroundImagePath != "")
+	if(moVisualStyle.sBackgroundImagePath != null && moVisualStyle.sBackgroundImagePath != "")
 	{
 		moBackgroundImage = new Image();
-		moBackgroundImage.src = moStyle.sBackgroundImagePath;
+		moBackgroundImage.src = moVisualStyle.sBackgroundImagePath;
 	}
 	
 	this.setPosition = function(pfNewPositionX, pfNewPositionY)
@@ -79,7 +136,7 @@ function CardStack(poCardStackStyle, pbTemporary)
 	
 	this.positionCard = function(poCard, Index)
 	{
-		if(moStyle.bRelativeToTopCard)
+		if(moVisualStyle.bRelativeToTopCard)
 		{
 			Index = (mtoCards.length - Index - 1);
 		}
@@ -93,8 +150,8 @@ function CardStack(poCardStackStyle, pbTemporary)
 			offsetY = (moBackgroundImage.height - poCard.getSize().y) * 0.5;
 		}
 		
-		poCard.fPositionX = mfPositionX + offsetX + moStyle.fHorizontalSpacing * Index;
-		poCard.fPositionY = mfPositionY + offsetY + moStyle.fVerticalSpacing * Index;
+		poCard.fPositionX = mfPositionX + offsetX + moVisualStyle.fHorizontalSpacing * Index;
+		poCard.fPositionY = mfPositionY + offsetY + moVisualStyle.fVerticalSpacing * Index;
 	}
 	
 	this.getCardCount = function()
@@ -102,13 +159,18 @@ function CardStack(poCardStackStyle, pbTemporary)
 		return mtoCards.length;
 	}
 	
+	this.getDropOutMaxCount = function()
+	{
+		return moInteractiveStyle.iDropOutMaxCount;
+	}
+	
 	this.pushCard = function(poCard)
 	{
 		if(mtoCards.length > 0)
 		{
-			mtoCards[mtoCards.length - 1].setFaceUp(false);
+			mtoCards[mtoCards.length - 1].setFaceUp(false, moInteractiveStyle.bDropOut);
 		}
-		poCard.setFaceUp(true);
+		poCard.setFaceUp(true, moInteractiveStyle.bDropOut);
 		
 		this.positionCard(poCard, mtoCards.length);
 		
@@ -128,7 +190,7 @@ function CardStack(poCardStackStyle, pbTemporary)
 		
 		if(mtoCards.length > 0)
 		{
-			mtoCards[mtoCards.length - 1].setFaceUp(true);
+			mtoCards[mtoCards.length - 1].setFaceUp(true, moInteractiveStyle.bDropOut);
 		}
 		
 		for(var i = 0; i < mtoCards.length; ++i)
@@ -186,7 +248,7 @@ function CardStack(poCardStackStyle, pbTemporary)
 	
 	this.updateCardSlotRectangle = function()
 	{
-		if(mbTemporary)
+		if(!moInteractiveStyle.bDropIn)
 		{
 			return;	// Nothing to do
 		}
@@ -235,8 +297,10 @@ function CardStack(poCardStackStyle, pbTemporary)
 		var bValid = false;
 		if(poCardStack != null)
 		{
+			var TotalCards = this.getCardCount() + poCardStack.getCardCount();
+			bValid = TotalCards <=  moInteractiveStyle.iDropInMaxCount || moInteractiveStyle.iDropInMaxCount < 0;
 			// Validate that this slot in unoccupied
-			bValid = this.oCurrentStack == null;
+			bValid = bValid && this.oCurrentStack == null;
 		}
 		return bValid;
 	}
