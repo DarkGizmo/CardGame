@@ -9,6 +9,7 @@ CardStackStyling.VisualStyle.oDefault = new function()
 	this.fHorizontalSpacing = 2.0;
 	this.fVerticalSpacing = -2.0;
 	this.bRelativeToTopCard = false;
+	this.bLastCardFaceUp = false;
 }
 
 CardStackStyling.VisualStyle.oHealthBar = new function()
@@ -17,6 +18,16 @@ CardStackStyling.VisualStyle.oHealthBar = new function()
 	this.fHorizontalSpacing = 6.0;
 	this.fVerticalSpacing = 0.0;
 	this.bRelativeToTopCard = false;
+	this.bLastCardFaceUp = false;
+}
+
+CardStackStyling.VisualStyle.oActionStack = new function()
+{
+	this.sBackgroundImagePath = "";
+	this.fHorizontalSpacing = 0.0;
+	this.fVerticalSpacing = -3.0;
+	this.bRelativeToTopCard = false;
+	this.bLastCardFaceUp = true;
 }
 
 CardStackStyling.VisualStyle.oSimpleStack = new function()
@@ -25,6 +36,7 @@ CardStackStyling.VisualStyle.oSimpleStack = new function()
 	this.fHorizontalSpacing = 3.0;
 	this.fVerticalSpacing = -3.0;
 	this.bRelativeToTopCard = false;
+	this.bLastCardFaceUp = true;
 }
 
 CardStackStyling.VisualStyle.oDragStack = new function()
@@ -33,6 +45,7 @@ CardStackStyling.VisualStyle.oDragStack = new function()
 	this.fHorizontalSpacing = 0.0;
 	this.fVerticalSpacing = 3.0;
 	this.bRelativeToTopCard = true;
+	this.bLastCardFaceUp = true;
 }
 
 CardStackStyling.VisualStyle.oCardSlot = new function()
@@ -41,11 +54,20 @@ CardStackStyling.VisualStyle.oCardSlot = new function()
 	this.fHorizontalSpacing = 0.0;
 	this.fVerticalSpacing = 3.0;
 	this.bRelativeToTopCard = false;
+	this.bLastCardFaceUp = true;
 }
 
 CardStackStyling.InteractiveStyle = {};
 
 CardStackStyling.InteractiveStyle.oDefault = new function()
+{
+	this.bDropOut = false;
+	this.iDropOutMaxCount = 0;
+	this.bDropIn = false;
+	this.iDropInMaxCount = 0;
+}
+
+CardStackStyling.InteractiveStyle.oNonInteractive = new function()
 {
 	this.bDropOut = false;
 	this.iDropOutMaxCount = 0;
@@ -164,13 +186,17 @@ function CardStack(poCardStackVisualStyle, poCardStackInteractiveStyle)
 		return moInteractiveStyle.iDropOutMaxCount;
 	}
 	
-	this.pushCard = function(poCard)
+	this.pushCard = function(poCard, bFlipFrontCard)
 	{
+		if(bFlipFrontCard == null)
+		{
+			bFlipFrontCard = true;
+		}
+		
 		if(mtoCards.length > 0)
 		{
 			mtoCards[mtoCards.length - 1].setFaceUp(false, moInteractiveStyle.bDropOut);
 		}
-		poCard.setFaceUp(true, moInteractiveStyle.bDropOut);
 		
 		this.positionCard(poCard, mtoCards.length);
 		
@@ -179,18 +205,23 @@ function CardStack(poCardStackVisualStyle, poCardStackInteractiveStyle)
 		poCard.sText = mtoCards.length.toString();
 		poCard.oParentStack = this;
 		
+		if(bFlipFrontCard)
+		{
+			this.flipFrontCard();
+		}
+		
 		this.updateCardSlotRectangle();
 	}
 	
-	this.popCard = function()
+	this.popCard = function(pbFlipFrontCard)
 	{
 		var oCard = mtoCards[mtoCards.length - 1];
 		
 		mtoCards.splice(mtoCards.length-1, 1);
 		
-		if(mtoCards.length > 0)
+		if(mtoCards.length > 0 && pbFlipFrontCard)
 		{
-			mtoCards[mtoCards.length - 1].setFaceUp(true, moInteractiveStyle.bDropOut);
+			this.flipFrontCard();
 		}
 		
 		for(var i = 0; i < mtoCards.length; ++i)
@@ -201,6 +232,21 @@ function CardStack(poCardStackVisualStyle, poCardStackInteractiveStyle)
 		this.updateCardSlotRectangle();
 		
 		return oCard;
+	}
+	
+	this.flipFrontCard = function()
+	{
+		if(moVisualStyle.bLastCardFaceUp)
+		{
+			if(mtoCards.length > 0)
+			{
+				mtoCards[mtoCards.length - 1].setFaceUp(true, moInteractiveStyle.bDropOut);
+			}
+		}
+		else
+		{
+			mtoCards[mtoCards.length - 1].setDrawText(true);
+		}
 	}
 	
 	this.draw = function(poCanvas)
