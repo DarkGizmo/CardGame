@@ -226,14 +226,22 @@ function MouseEventManager()
 	
 	this.UpdateMouseWheel = function(piWheelDelta)
 	{
+		var bCancelMouseWheel = false;
 		for(var i = 0; i < this.toMouseEventComponents.length; ++i)
 		{
 			var oComponent = this.toMouseEventComponents[i];
 			if(oComponent.moOwner.onMouseWheel)
 			{
-				oComponent.moOwner.onMouseWheel(piWheelDelta);
+				var bComponentCancelsMouseWheel = oComponent.moOwner.onMouseWheel(piWheelDelta);
+				if(bComponentCancelsMouseWheel == null)
+				{
+					bComponentCancelsMouseWheel = false;
+				}
+				bCancelMouseWheel = bCancelMouseWheel || bComponentCancelsMouseWheel;
 			}
 		}
+		
+		return bCancelMouseWheel;
 	}
 }
 
@@ -286,21 +294,23 @@ function initializeMouseEventManager()
 				 */
 				iDelta = -e.detail/3;
 			}
+			
+			var bPreventMouseWheel = false;
 			/** If delta is nonzero, handle it.
 			 * Basically, delta is now positive if wheel was scrolled up,
 			 * and negative, if wheel was scrolled down.
 			 */
 			if (iDelta)
 			{
-				goMouseEventManagerInstance.UpdateMouseWheel(iDelta);
+				bPreventMouseWheel = goMouseEventManagerInstance.UpdateMouseWheel(iDelta);
 			}
 			/** Prevent default actions caused by mouse wheel.
 			 * That might be ugly, but we handle scrolls somehow
 			 * anyway, so don't bother here..
 			 */
-			if (e.preventDefault)
+			if (bPreventMouseWheel && e.preventDefault)
 					e.preventDefault();
-			e.returnValue = false;
+			e.returnValue = !bPreventMouseWheel;
 		}
 	
 	if (oContainer.addEventListener)
