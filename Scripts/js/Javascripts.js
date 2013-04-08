@@ -14,6 +14,7 @@ document.writeln("<script src='Scripts/js/Framework/Managers/MouseEventManager.j
 // Gameplay
 document.writeln("<script src='Scripts/js/Game/Cards/Card.js'></script>");
 document.writeln("<script src='Scripts/js/Game/Cards/CardStack.js'></script>");
-//document.writeln("<script src='Scripts/js/Game/Cards/CardSlot.js'></script>");
+document.writeln("<script src='Scripts/js/Game/Cards/CardStackManager.js'></script>");
+document.writeln("<script src='Scripts/js/Game/Cards/CardSlot.js'></script>");
 
 document.writeln("<script src='Scripts/js/Game/Game.js'></script>");
