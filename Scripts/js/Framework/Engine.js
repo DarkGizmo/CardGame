@@ -3,8 +3,19 @@ var FPS = 30.0;
 var gtfInitializationFunctions = new Array();
 var gtfUpdateFunctions = new Array();
 
-//Wait for DOM to load and init game
-document.addEventListener('DOMContentLoaded', 
+function addListener(obj, eventName, listener)
+{
+	if(obj.addEventListener)
+	{
+		obj.addEventListener(eventName, listener, false);
+	}
+	else
+	{
+		obj.attachEvent("on" + eventName, listener);
+	}
+}
+
+addListener(window, "load", 
 	function()
 	{
 		initializeEngine();
