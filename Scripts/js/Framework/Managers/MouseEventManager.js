@@ -30,7 +30,7 @@ function MouseEventComponent(poOwner, pfTop, pfLeft, pfWidth, pfHeight, piZOrder
 	this.setZOrder = function(piZOrder)
 	{
 		miZOrder = piZOrder;
-		goMouseEventManagerInstance.sortComponents();
+		goMouseEventManager.sortComponents();
 	}
 	
 	this.update = function(pfTop, pfLeft, pfWidth, pfHeight, piZOrder)
@@ -40,7 +40,7 @@ function MouseEventComponent(poOwner, pfTop, pfLeft, pfWidth, pfHeight, piZOrder
 		if(piZOrder != null && miZOrder != piZOrder)
 		{
 			miZOrder = piZOrder;
-			goMouseEventManagerInstance.sortComponents();
+			goMouseEventManager.sortComponents();
 		}
 	}
 }
@@ -71,6 +71,7 @@ function MouseEventManager()
 		{
 			oComponent = new MouseEventComponent(poOwner, pfTop, pfLeft, pfWidth, pfHeight);
 			this.toMouseEventComponents.push(oComponent);
+			this.sortComponents();
 		}
 		
 		return oComponent;
@@ -112,7 +113,7 @@ function MouseEventManager()
 		if(bIsMouseInside)
 		{
 			var bWasMouseOver = poComponent.bMouseOver;
-			poComponent.bMouseOver = true;
+			poComponent.bMouseOver = true; // We want this set before calling the events
 			
 			if(!bWasMouseOver)
 			{
@@ -163,9 +164,12 @@ function MouseEventManager()
 	this.updateMousePosition = function(pfMousePosX, pfMousePosY)
 	{
 		var bMouseOverUpdateDone = false;
-		for(var i = 0; i < this.toMouseEventComponents.length; ++i)
+	
+		// Create a copy of the current components in case some are added or removed
+		var toMouseEventComponentCopy = [].concat(this.toMouseEventComponents);
+		for(var i = 0; i < toMouseEventComponentCopy.length; ++i)
 		{
-			var oComponent = this.toMouseEventComponents[i];
+			var oComponent = toMouseEventComponentCopy[i];
 			if(!bMouseOverUpdateDone)
 			{
 				bMouseOverUpdateDone = this.updateMouseOver(pfMousePosX, pfMousePosY, oComponent);
@@ -188,11 +192,14 @@ function MouseEventManager()
 
 	this.updateMouseClick = function(pfMousePosX, pfMousePosY, piButton, pbClicked)
 	{
+		var bPreventMouseDown = false;
 		this.tbButtonDown[piButton] = pbClicked;
 		
-		for(var i = 0; i < this.toMouseEventComponents.length; ++i)
+		// Create a copy of the current components in case some are added or removed
+		var toMouseEventComponentCopy = [].concat(this.toMouseEventComponents);
+		for(var i = 0; i < toMouseEventComponentCopy.length && !bPreventMouseDown; ++i)
 		{
-			var oComponent = this.toMouseEventComponents[i];
+			var oComponent = toMouseEventComponentCopy[i];
 			if(pbClicked)
 			{
 				var bIsMouseInside = this.isMouseInsideComponent(pfMousePosX, pfMousePosY, oComponent);
@@ -202,7 +209,12 @@ function MouseEventManager()
 					
 					if(oComponent.moOwner.onMouseDown)
 					{
-						oComponent.moOwner.onMouseDown(piButton, pfMousePosX, pfMousePosY);
+						bPreventMouseDown = oComponent.moOwner.onMouseDown(piButton, pfMousePosX, pfMousePosY);
+						
+						if(bPreventMouseDown == null)
+						{
+							bPreventMouseDown = false;
+						}
 					}
 					
 					if(oComponent.toMousePosition[piButton] == null)
@@ -222,14 +234,19 @@ function MouseEventManager()
 				}
 			}
 		}
+		
+		return bPreventMouseDown;
 	}
 	
 	this.UpdateMouseWheel = function(piWheelDelta)
 	{
 		var bCancelMouseWheel = false;
-		for(var i = 0; i < this.toMouseEventComponents.length; ++i)
+		
+		// Create a copy of the current components in case some are added or removed
+		var toMouseEventComponentCopy = [].concat(this.toMouseEventComponents);
+		for(var i = 0; i < toMouseEventComponentCopy.length; ++i)
 		{
-			var oComponent = this.toMouseEventComponents[i];
+			var oComponent = toMouseEventComponentCopy[i];
 			if(oComponent.moOwner.onMouseWheel)
 			{
 				var bComponentCancelsMouseWheel = oComponent.moOwner.onMouseWheel(piWheelDelta);
@@ -245,7 +262,7 @@ function MouseEventManager()
 	}
 }
 
-var goMouseEventManagerInstance = new MouseEventManager();
+var goMouseEventManager = new MouseEventManager();
 
 function initializeMouseEventManager()
 {
@@ -255,7 +272,8 @@ function initializeMouseEventManager()
 		function(e)
 		{
 			var oContainer = document.getElementById('canvas');
-			goMouseEventManagerInstance.updateMousePosition(e.pageX - oContainer.offsetLeft, e.pageY - oContainer.offsetTop);
+			var oRectangle = oContainer.getBoundingClientRect();
+			goMouseEventManager.updateMousePosition(e.clientX - oRectangle.left, e.clientY - oRectangle.top);
 		}, false 
 	);
 	
@@ -263,7 +281,14 @@ function initializeMouseEventManager()
 		function(e)
 		{
 			var oContainer = document.getElementById('canvas');
-			goMouseEventManagerInstance.updateMouseClick(e.pageX - oContainer.offsetLeft, e.pageY - oContainer.offsetTop, e.button, true);
+			var oRectangle = oContainer.getBoundingClientRect();
+			var bPreventMouseDown = goMouseEventManager.updateMouseClick(e.clientX - oRectangle.left, e.clientY - oRectangle.top, e.button, true);
+			
+			if (bPreventMouseDown && e.preventDefault)
+			{
+				e.preventDefault();
+			}
+			e.returnValue = !bPreventMouseDown;
 		}, false 
 	);
 	
@@ -271,7 +296,8 @@ function initializeMouseEventManager()
 		function(e)
 		{
 			var oContainer = document.getElementById('canvas');
-			goMouseEventManagerInstance.updateMouseClick(e.pageX - oContainer.offsetLeft, e.pageY - oContainer.offsetTop, e.button, false);
+			var oRectangle = oContainer.getBoundingClientRect();
+			goMouseEventManager.updateMouseClick(e.clientX - oRectangle.left, e.clientY - oRectangle.top, e.button, false);
 		}, false 
 	);
 	
@@ -302,7 +328,7 @@ function initializeMouseEventManager()
 			 */
 			if (iDelta)
 			{
-				bPreventMouseWheel = goMouseEventManagerInstance.UpdateMouseWheel(iDelta);
+				bPreventMouseWheel = goMouseEventManager.UpdateMouseWheel(iDelta);
 			}
 			/** Prevent default actions caused by mouse wheel.
 			 * That might be ugly, but we handle scrolls somehow
@@ -314,7 +340,10 @@ function initializeMouseEventManager()
 		}
 	
 	if (oContainer.addEventListener)
+	{
         window.addEventListener('DOMMouseScroll', oMouseWheelFunction, false);
-	window.onmousewheel = document.onmousewheel = oMouseWheelFunction;
+	}
+	
+	document.onmousewheel = oMouseWheelFunction;
 }
 gtfInitializationFunctions.push(initializeMouseEventManager);

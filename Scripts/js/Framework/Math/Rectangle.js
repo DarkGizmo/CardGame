@@ -5,6 +5,11 @@ function Rectangle(pfPositionX, pfPositionY, pfWidth, pfHeight)
 	this.fTop; // Initialization Done at the end of class
 	this.fBottom; // Initialization Done at the end of class
 	
+	this.ctor = function(pfPositionX, pfPositionY, pfWidth, pfHeight)
+	{
+		this.updateBounds(pfPositionX, pfPositionY, pfWidth, pfHeight);
+	}
+	
 	this.updateBounds = function(pfPositionX, pfPositionY, pfWidth, pfHeight)
 	{
 		this.fLeft = pfPositionX;
@@ -19,5 +24,5 @@ function Rectangle(pfPositionX, pfPositionY, pfWidth, pfHeight)
 				pfPositionY >= this.fTop && pfPositionY <= this.fBottom;
 	}
 	
-	this.updateBounds(pfPositionX, pfPositionY, pfWidth, pfHeight);
+	this.ctor(pfPositionX, pfPositionY, pfWidth, pfHeight);
 }

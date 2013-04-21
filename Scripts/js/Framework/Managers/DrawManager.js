@@ -5,7 +5,19 @@ var giScreenHeight;
 function DrawComponent(poOwner, pfZOrder)
 {
 	this.oOwner = poOwner;
-	this.fZOrder = pfZOrder;
+	
+	var mfZOrder = pfZOrder;
+	
+	this.setZOrder = function(pfZOrder)
+	{
+		mfZOrder = pfZOrder;
+		goDrawManager.sortComponents();
+	}
+	
+	this.getZOrder = function()
+	{
+		return mfZOrder;
+	}
 }
 
 function DrawManager()
@@ -48,14 +60,16 @@ function DrawManager()
 			if(this.toDrawComponents[i].oOwner == poOwner)
 			{
 				this.toDrawComponents.splice(i, 1);
-				break;
+				return;
 			}
 		}
+		
+		alert("Couldn't remove specified Draw Component");
 	}
 	
 	function sortFunction(poComponentA, poComponentB)
 	{
-		poComponentA.fZOrder > poComponentB.fZOrder;
+		poComponentA.getZOrder() > poComponentB.getZOrder();
 	}
 	
 	this.sortComponents = function()
@@ -74,11 +88,11 @@ function DrawManager()
 		}
 		
 		
-		for(var i = 0; i < goDrawManagerInstance.toDrawComponents.length; ++i)
+		for(var i = 0; i < goDrawManager.toDrawComponents.length; ++i)
 		{
-			if(goDrawManagerInstance.toDrawComponents[i].oOwner.draw != null)
+			if(goDrawManager.toDrawComponents[i].oOwner.draw != null)
 			{
-				goDrawManagerInstance.toDrawComponents[i].oOwner.draw(goCanvas);
+				goDrawManager.toDrawComponents[i].oOwner.draw(goCanvas);
 			}
 		}
 	}
@@ -101,10 +115,10 @@ function initializeDrawManager()
 	
 function updateDrawManager()
 {
-	goDrawManagerInstance.Update();
+	goDrawManager.Update();
 }
 
-var goDrawManagerInstance = new DrawManager();
+var goDrawManager = new DrawManager();
 
 gtfInitializationFunctions.push(initializeDrawManager);
 gtfUpdateFunctions.push(updateDrawManager);
