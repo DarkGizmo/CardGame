@@ -5,6 +5,7 @@ document.writeln("<script src='Scripts/js/Framework/Text.js'></script>");
 
 // Engine.Math
 document.writeln("<script src='Scripts/js/Framework/Math/Rectangle.js'></script>");
+document.writeln("<script src='Scripts/js/Framework/Math/Random.js'></script>");
 
 // Engine.Managers
 document.writeln("<script src='Scripts/js/Framework/Managers/DrawManager.js'></script>");
