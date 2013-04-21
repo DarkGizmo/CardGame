@@ -65,7 +65,7 @@ function UpdateManager()
 	
 	function sortFunction(poComponentA, poComponentB)
 	{
-		poComponentA.getOrder() > poComponentB.getOrder();
+		return poComponentA.getOrder() > poComponentB.getOrder();
 	}
 	
 	this.sortComponents = function()
