@@ -77,7 +77,7 @@ function DrawManager()
 		this.toDrawComponents.sort(sortFunction);
 	}
 	
-	this.Update = function()
+	this.update = function()
 	{
 		goCanvas.clearRect(0, 0, giScreenWidth, giScreenHeight)
 		goCanvas.save();
@@ -97,7 +97,7 @@ function DrawManager()
 		}
 	}
 	
-	this.SetBackground = function(psPath)
+	this.setBackground = function(psPath)
 	{
 		moBackgroundImage = new Image();
 		moBackgroundImage.src = psPath;
@@ -111,14 +111,10 @@ function initializeDrawManager()
 	
 	giScreenWidth = parseInt(document.getElementById('canvas').width);
 	giScreenHeight = parseInt(document.getElementById('canvas').height);
-}
 	
-function updateDrawManager()
-{
-	goDrawManager.Update();
+	goUpdateManager.addComponent(goDrawManager);
 }
 
 var goDrawManager = new DrawManager();
 
 gtfInitializationFunctions.push(initializeDrawManager);
-gtfUpdateFunctions.push(updateDrawManager);

@@ -8,8 +8,7 @@ function Card(psCardImagePath)
 	
 	this.oParentStack = null;
 	
-	var moCardImage = new Image();
-	moCardImage.src = psCardImagePath;
+	var moCardImage = null;
 	var mbFaceUp = false;
 	var mbDrawText = false;
 	var moMouseEventComponent = null;
@@ -18,6 +17,12 @@ function Card(psCardImagePath)
 	
 	var moOldCardStack;
 	var moNewCardStack;
+	
+	this.ctor = function()
+	{
+		moCardImage = new Image();
+		moCardImage.src = psCardImagePath;
+	}
 	
 	this.draw = function(poCanvas)
 	{
@@ -240,4 +245,6 @@ function Card(psCardImagePath)
 			return true;
 		}
 	}
+	
+	this.ctor();
 }

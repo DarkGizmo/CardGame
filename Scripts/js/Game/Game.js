@@ -1,6 +1,6 @@
 function initializeGame()
 {
-	goDrawManager.SetBackground("Assets/Images/Background.png");
+	goDrawManager.setBackground("Assets/Images/Background.png");
 	
 	var oHealthBar = new CardStack(CardStackStyling.VisualStyle.oHealthBar, CardStackStyling.InteractiveStyle.oNonInteractive);
 	for(i = 0; i < 20; ++i)
