@@ -5,9 +5,13 @@ var giScreenHeight;
 function DrawComponent(poOwner, pfZOrder)
 {
 	this.oOwner = poOwner;
+	this.fPositionX = 0.0;
+	this.fPositionY = 0.0;
+	this.fRotation = 0.0;
+	this.fAlpha = 1.0;
 	
 	var mfZOrder = pfZOrder;
-	
+
 	this.setZOrder = function(pfZOrder)
 	{
 		mfZOrder = pfZOrder;
@@ -69,7 +73,7 @@ function DrawManager()
 	
 	function sortFunction(poComponentA, poComponentB)
 	{
-		poComponentA.getZOrder() > poComponentB.getZOrder();
+		return poComponentA.getZOrder() - poComponentB.getZOrder();
 	}
 	
 	this.sortComponents = function()
@@ -90,9 +94,18 @@ function DrawManager()
 		
 		for(var i = 0; i < goDrawManager.toDrawComponents.length; ++i)
 		{
-			if(goDrawManager.toDrawComponents[i].oOwner.draw != null)
+			var oComponent = goDrawManager.toDrawComponents[i];
+			if(oComponent.oOwner.draw != null)
 			{
-				goDrawManager.toDrawComponents[i].oOwner.draw(goCanvas);
+				goCanvas.save();
+				{
+					goCanvas.globalAlpha = oComponent.fAlpha;
+					goCanvas.translate(oComponent.fPositionX, oComponent.fPositionY);
+					goCanvas.rotate(oComponent.fRotation);
+					
+					oComponent.oOwner.draw(goCanvas);
+				}
+				goCanvas.restore();
 			}
 		}
 	}
