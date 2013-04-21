@@ -33,7 +33,7 @@ function MouseEventComponent(poOwner, pfTop, pfLeft, pfWidth, pfHeight, piZOrder
 		goMouseEventManager.sortComponents();
 	}
 	
-	this.update = function(pfTop, pfLeft, pfWidth, pfHeight, piZOrder)
+	this.update = function(pfLeft, pfTop, pfWidth, pfHeight, piZOrder)
 	{
 		this.oRectangle.updateBounds(pfLeft, pfTop, pfWidth, pfHeight);
 		

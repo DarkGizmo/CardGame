@@ -132,26 +132,44 @@ function CardStack(poCardStackVisualStyle, poCardStackInteractiveStyle)
 	var mtoCards = [];
 	var mfPositionX = 0.0;
 	var mfPositionY = 0.0;
-	var moDrawComponent = goDrawManager.addComponent(this, 0);
-	var moBackgroundImage; // Initialize later
-	var moVisualStyle = poCardStackVisualStyle;
-	var moInteractiveStyle = poCardStackInteractiveStyle;
+	var moDrawComponent = null;
+	var moMouseEventComponent = null;
+	var moBackgroundImage = null;
+	var moVisualStyle = null;
+	var moInteractiveStyle = null;
 	var moStackDropRectangle = null;
 	
-	if(moVisualStyle == null)
-	{
-		moVisualStyle = CardStackStyling.VisualStyle.oDefault;
-	}
+	var moDraggedCardStack = null;
 	
-	if(moInteractiveStyle == null)
+	this.ctor = function(poCardStackVisualStyle, poCardStackInteractiveStyle)
 	{
-		moInteractiveStyle = CardStackStyling.InteractiveStyle.oDefault;
-	}
+		moDrawComponent = goDrawManager.addComponent(this, 0);
 
-	if(moVisualStyle.sBackgroundImagePath != null && moVisualStyle.sBackgroundImagePath != "")
-	{
-		moBackgroundImage = new Image();
-		moBackgroundImage.src = moVisualStyle.sBackgroundImagePath;
+		moVisualStyle = poCardStackVisualStyle;
+		moInteractiveStyle = poCardStackInteractiveStyle;
+		
+		if(moVisualStyle == null)
+		{
+			moVisualStyle = CardStackStyling.VisualStyle.oDefault;
+		}
+		
+		if(moInteractiveStyle == null)
+		{
+			moInteractiveStyle = CardStackStyling.InteractiveStyle.oDefault;
+		}
+
+		if(moVisualStyle.sBackgroundImagePath != null && moVisualStyle.sBackgroundImagePath != "")
+		{
+			moBackgroundImage = new Image();
+			moBackgroundImage.src = moVisualStyle.sBackgroundImagePath;
+		}
+		
+		if(moInteractiveStyle.bDropOut)
+		{
+			moMouseEventComponent = goMouseEventManager.addComponent(this, 0);
+		}
+		
+		this.updateCardSlotRectangle();
 	}
 	
 	this.getDrawComponent = function()
@@ -171,12 +189,27 @@ function CardStack(poCardStackVisualStyle, poCardStackInteractiveStyle)
 		this.updateCardSlotRectangle();
 	};
 	
+	this.getPosition = function()
+	{
+		var oPosition = {};
+		oPosition.X = mfPositionX;
+		oPosition.Y = mfPositionY;
+		
+		return oPosition;
+	}
+	
 	this.destroy = function()
 	{
 		if(moDrawComponent != null)
 		{
 			goDrawManager.removeComponent(this);
 			moDrawComponent = null;
+		}
+		
+		if(moMouseEventComponent != null)
+		{
+			goMouseEventManager.removeComponent(this);
+			moMouseEventComponent = null;
 		}
 	}
 	
@@ -296,6 +329,9 @@ function CardStack(poCardStackVisualStyle, poCardStackInteractiveStyle)
 		{
 			poCanvas.restore();
 		}
+		
+		// Hack this should be in update
+		this.updateCardSlotRectangle();
 	};
 	
 	this.onMouseDrag = function(piButton, pfDeltaMoveX, pfDeltaMoveY)
@@ -359,6 +395,15 @@ function CardStack(poCardStackVisualStyle, poCardStackInteractiveStyle)
 			// The drop rectangle is suppose to be on the last card
 			var oLastCard = mtoCards[mtoCards.length - 1];
 			moStackDropRectangle.updateBounds(oLastCard.fPositionX, oLastCard.fPositionY, oLastCard.getSize().x, oLastCard.getSize().y)
+			
+			if(moDraggedCardStack != null)
+			{
+				moMouseEventComponent.update(moDraggedCardStack.getPosition().X, moDraggedCardStack.getPosition().Y, oLastCard.getSize().x, oLastCard.getSize().y);
+			}
+			else
+			{
+				moMouseEventComponent.update(oLastCard.fPositionX, oLastCard.fPositionY, oLastCard.getSize().x, oLastCard.getSize().y);
+			}
 		}
 	}
 	
@@ -383,5 +428,154 @@ function CardStack(poCardStackVisualStyle, poCardStackInteractiveStyle)
 		}
 	}
 	
-	this.updateCardSlotRectangle();
+	this.updateCursor = function()
+	{
+		if(mtoCards.length > 0)
+		{
+			if(moMouseEventComponent.tbMouseDown[MouseClickType.eLeftClick])
+			{
+				setCursorStyle("url(Assets/Images/UI/DragCursor.png)");
+			}
+			else if(moMouseEventComponent.bMouseOver)
+			{
+				setCursorStyle("url(Assets/Images/UI/GrabCursor.png)");
+			}
+			else
+			{
+				setCursorStyle("auto");
+			}
+		}
+		else
+		{
+			setCursorStyle("auto");
+		}
+	}
+	
+	this.onMouseIn = function()
+	{
+		this.updateCursor();
+		
+		return true;
+	}
+	
+	this.onMouseOut = function()
+	{
+		this.updateCursor();
+	}
+	
+	this.onMouseDown = function(piButton, pfPositionX, pfPositionY)
+	{
+		if(piButton == MouseClickType.eLeftClick)
+		{
+			this.updateCursor();
+			
+			return true;
+		}
+	}
+	
+	this.onMouseUp = function(piButton, pfPositionX, pfPositionY)
+	{
+		if(piButton == MouseClickType.eLeftClick)
+		{
+			if(moDraggedCardStack != null)
+			{
+				var bValidCardSlot = false;
+				var oCardStack = goCardStackManager.getCardStackAtPosition(pfPositionX, pfPositionY);
+				
+				if(oCardStack != null)
+				{
+					bValidCardSlot = oCardStack.validate(moDraggedCardStack);
+				}
+				
+				if(!bValidCardSlot)
+				{
+					var oTopCard = moDraggedCardStack.popCard();
+					while(moDraggedCardStack.getCardCount() != 0)
+					{
+						this.pushCard(moDraggedCardStack.popCard());
+					}
+					this.pushCard(oTopCard);
+				}
+				else
+				{
+					oCardStack.assignCardStack(moDraggedCardStack);
+				}
+				
+				this.flipFrontCard();
+				
+				moDraggedCardStack.destroy();
+				moDraggedCardStack = null;
+				
+				moMouseEventComponent.setZOrder(0);
+			}
+			
+			this.updateCursor();
+		}
+	}
+	
+	this.onMouseDrag = function(piButton, pfDeltaMoveX, pfDeltaMoveY)
+	{
+		if(piButton == MouseClickType.eLeftClick)
+		{
+			// We just started dragging
+			if(moInteractiveStyle.bDropOut && moDraggedCardStack == null)
+			{
+				var bShouldFlipCard = this.getDropOutMaxCount() - 1 != 0;
+				
+				moDraggedCardStack = new CardStack(CardStackStyling.VisualStyle.oDragStack, CardStackStyling.InteractiveStyle.oDragStack);
+				var oLastCard = mtoCards[mtoCards.length - 1];
+				moDraggedCardStack.setPosition(oLastCard.fPositionX, oLastCard.fPositionY);
+				moDraggedCardStack.pushCard(this.popCard(bShouldFlipCard));
+				
+				moDraggedCardStack.getDrawComponent().setZOrder(100);
+				moMouseEventComponent.setZOrder(100);
+			}
+			
+			var oPosition = moDraggedCardStack.getPosition();
+			moDraggedCardStack.setPosition(oPosition.X + pfDeltaMoveX, oPosition.Y + pfDeltaMoveY);
+			
+			return true;
+		}
+	}
+	
+	this.getCardDropOutCount = function()
+	{
+		return this.getDropOutMaxCount() - moDraggedCardStack.getCardCount();
+	}
+	
+	this.onMouseWheel = function(piDelta)
+	{
+		if(moDraggedCardStack != null)
+		{
+			if(piDelta > 0)
+			{
+				if(this.getCardCount() > 0 && this.getCardDropOutCount() != 0)
+				{
+					var bShouldFlipCard = this.getDropOutMaxCount() - moDraggedCardStack.getCardCount() - 1 != 0;
+					// Keep this card on top, so that we don't recreate all the components for the new top card
+					var oTopCard = moDraggedCardStack.popCard();
+					{
+						moDraggedCardStack.pushCard(this.popCard(bShouldFlipCard));
+					}
+					moDraggedCardStack.pushCard(oTopCard);
+				}
+			}
+			else
+			{
+				if(moDraggedCardStack.getCardCount() > 1)
+				{
+					// Keep this card on top, so that we don't recreate all the components for the new top card
+					var oTopCard = moDraggedCardStack.popCard();
+					{
+						this.pushCard(moDraggedCardStack.popCard(), this.getCardDropOutCount() != 0);
+					}
+					moDraggedCardStack.pushCard(oTopCard);
+				}
+			}
+			
+			return true;
+		}
+	}
+	
+	this.ctor(poCardStackVisualStyle, poCardStackInteractiveStyle);
 };
