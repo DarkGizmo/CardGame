@@ -3,6 +3,7 @@ function Card(psCardImagePath)
 	this.fPositionX = 0;
 	this.fPositionY = 0;
 	this.fScale = 1.0;
+	this.fRotation = 0.0;
 	this.sText = "";
 	
 	this.oParentStack = null;
@@ -20,14 +21,22 @@ function Card(psCardImagePath)
 	
 	this.draw = function(poCanvas)
 	{
-		var cardWidth = moCardImage.width * 0.5;
-		poCanvas.drawImage(moCardImage, (mbFaceUp ? cardWidth : 0.0), 0.0, cardWidth, moCardImage.height, this.fPositionX, this.fPositionY, cardWidth * this.fScale, moCardImage.height * this.fScale);
-		
-		if(mbDrawText && this.sText != "")
+		poCanvas.save();
 		{
-			Text.drawText(poCanvas, this.sText, this.fPositionX + this.getSize().x * 0.5, this.fPositionY + this.getSize().y * 0.5, FontTypes.oCard, "center", "middle");
+			poCanvas.translate(this.fPositionX, this.fPositionY);
+			poCanvas.rotate(this.fRotation);
+			
+			var cardWidth = moCardImage.width * 0.5;
+			poCanvas.drawImage(moCardImage, (mbFaceUp ? cardWidth : 0.0), 0.0, cardWidth, moCardImage.height, 0, 0, cardWidth * this.fScale, moCardImage.height * this.fScale);
+			
+			if(mbDrawText && this.sText != "")
+			{
+				Text.drawText(poCanvas, this.sText, 0 + this.getSize().x * 0.5, 0 + this.getSize().y * 0.5, FontTypes.oCard, "center", "middle");
+			}
 		}
+		poCanvas.restore();
 		
+		// Hack move this to an update manager
 		if(moMouseEventComponent != null)
 		{
 			moMouseEventComponent.update(this.fPositionY, this.fPositionX , this.getSize().x, this.getSize().y);
@@ -50,18 +59,15 @@ function Card(psCardImagePath)
 		{
 			mbFaceUp = pbNewFaceUp;
 			
-			if(pbEnableDrag)
+			if(pbEnableDrag && mbFaceUp)
 			{
-				if(!mbFaceUp)
-				{
-					goMouseEventManagerInstance.removeComponent(this);
-					moMouseEventComponent = null;
-				}
-				else
-				{
-					moMouseEventComponent = 
-					goMouseEventManagerInstance.addComponent(this, this.fPositionY, this.fPositionX, this.getSize().x, this.getSize().y);
-				}
+				moMouseEventComponent = 
+					goMouseEventManager.addComponent(this, this.fPositionY, this.fPositionX, this.getSize().x, this.getSize().y);
+			}
+			else if(moMouseEventComponent != null)
+			{
+				goMouseEventManager.removeComponent(this);
+				moMouseEventComponent = null;
 			}
 			
 			this.setDrawText(mbFaceUp);
@@ -139,11 +145,11 @@ function Card(psCardImagePath)
 			if(moNewCardStack != null)
 			{
 				var bValidCardSlot = false;
-				var oCardSlot = goCardStackManager.getCardSlotAtPosition(pfPositionX, pfPositionY);
+				var oCardStack = goCardStackManager.getCardStackAtPosition(pfPositionX, pfPositionY);
 				
-				if(oCardSlot != null)
+				if(oCardStack != null)
 				{
-					bValidCardSlot = oCardSlot.validate(moNewCardStack);
+					bValidCardSlot = oCardStack.validate(moNewCardStack);
 				}
 				
 				if(!bValidCardSlot)
@@ -157,11 +163,12 @@ function Card(psCardImagePath)
 				}
 				else
 				{
-					oCardSlot.assignCardStack(moNewCardStack);
-					moNewCardStack.bBeingMoved = false;
+					oCardStack.assignCardStack(moNewCardStack);
 				}
 				
 				moOldCardStack.flipFrontCard();
+				
+				moNewCardStack.destroy();
 				moNewCardStack = null;
 				moOldCardStack = null;
 				
@@ -180,6 +187,7 @@ function Card(psCardImagePath)
 	{
 		if(piButton == MouseClickType.eLeftClick)
 		{
+			// We just started dragging
 			if(moNewCardStack == null)
 			{
 				var bShouldFlipCard = this.oParentStack.getDropOutMaxCount() - 1 != 0;
@@ -187,10 +195,10 @@ function Card(psCardImagePath)
 				moOldCardStack = this.oParentStack;
 				moNewCardStack = new CardStack(CardStackStyling.VisualStyle.oDragStack, CardStackStyling.InteractiveStyle.oDragStack);
 				moNewCardStack.setPosition(this.fPositionX, this.fPositionY);
-				moNewCardStack.pushCard(this.oParentStack.popCard(bShouldFlipCard));
-				moNewCardStack.bBeingMoved = true;
+				moNewCardStack.pushCard(moOldCardStack.popCard(bShouldFlipCard));
 				
 				moMouseEventComponent.setZOrder(100);
+				moNewCardStack.getDrawComponent().setZOrder(100);
 			}
 			
 			moNewCardStack.onMouseDrag(piButton, pfDeltaMoveX, pfDeltaMoveY);
@@ -208,8 +216,11 @@ function Card(psCardImagePath)
 				if(moOldCardStack.getCardCount() > 0 && this.getCardDropOutCount() != 0)
 				{
 					var bShouldFlipCard = moOldCardStack.getDropOutMaxCount() - this.oParentStack.getCardCount() - 1 != 0;
+					// Keep this card on top, so that we don't recreate all the components for the new top card
 					moNewCardStack.popCard();
-					moNewCardStack.pushCard(moOldCardStack.popCard(bShouldFlipCard));
+					{
+						moNewCardStack.pushCard(moOldCardStack.popCard(bShouldFlipCard));
+					}
 					moNewCardStack.pushCard(this);
 				}
 			}
@@ -217,8 +228,11 @@ function Card(psCardImagePath)
 			{
 				if(moNewCardStack.getCardCount() > 1)
 				{
+					// Keep this card on top, so that we don't recreate all the components for the new top card
 					moNewCardStack.popCard();
-					moOldCardStack.pushCard(moNewCardStack.popCard(), this.getCardDropOutCount() != 0);
+					{
+						moOldCardStack.pushCard(moNewCardStack.popCard(), this.getCardDropOutCount() != 0);
+					}
 					moNewCardStack.pushCard(this);
 				}
 			}

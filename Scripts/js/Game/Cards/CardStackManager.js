@@ -26,7 +26,7 @@ function CardStackManager()
 		}
 	}
 	
-	this.getCardSlotAtPosition = function(pfPositionX, pfPositionY)
+	this.getCardStackAtPosition = function(pfPositionX, pfPositionY)
 	{
 		for(var i = 0; i < mtoCardStacks.length; ++i)
 		{

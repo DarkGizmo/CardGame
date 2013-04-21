@@ -10,6 +10,8 @@ CardStackStyling.VisualStyle.oDefault = new function()
 	this.fVerticalSpacing = -2.0;
 	this.bRelativeToTopCard = false;
 	this.bLastCardFaceUp = false;
+	this.bUseAlpha = false;
+	this.fAlphaMultiplier = 1.0;
 }
 
 CardStackStyling.VisualStyle.oHealthBar = new function()
@@ -19,6 +21,8 @@ CardStackStyling.VisualStyle.oHealthBar = new function()
 	this.fVerticalSpacing = 0.0;
 	this.bRelativeToTopCard = false;
 	this.bLastCardFaceUp = false;
+	this.bUseAlpha = false;
+	this.fAlphaMultiplier = 1.0;
 }
 
 CardStackStyling.VisualStyle.oActionStack = new function()
@@ -28,6 +32,8 @@ CardStackStyling.VisualStyle.oActionStack = new function()
 	this.fVerticalSpacing = -3.0;
 	this.bRelativeToTopCard = false;
 	this.bLastCardFaceUp = true;
+	this.bUseAlpha = false;
+	this.fAlphaMultiplier = 1.0;
 }
 
 CardStackStyling.VisualStyle.oSimpleStack = new function()
@@ -37,6 +43,8 @@ CardStackStyling.VisualStyle.oSimpleStack = new function()
 	this.fVerticalSpacing = -3.0;
 	this.bRelativeToTopCard = false;
 	this.bLastCardFaceUp = true;
+	this.bUseAlpha = false;
+	this.fAlphaMultiplier = 1.0;
 }
 
 CardStackStyling.VisualStyle.oDragStack = new function()
@@ -46,6 +54,8 @@ CardStackStyling.VisualStyle.oDragStack = new function()
 	this.fVerticalSpacing = 3.0;
 	this.bRelativeToTopCard = true;
 	this.bLastCardFaceUp = true;
+	this.bUseAlpha = true;
+	this.fAlphaMultiplier = 0.5;
 }
 
 CardStackStyling.VisualStyle.oCardSlot = new function()
@@ -55,6 +65,8 @@ CardStackStyling.VisualStyle.oCardSlot = new function()
 	this.fVerticalSpacing = 3.0;
 	this.bRelativeToTopCard = false;
 	this.bLastCardFaceUp = true;
+	this.bUseAlpha = false;
+	this.fAlphaMultiplier = 1.0;
 }
 
 CardStackStyling.InteractiveStyle = {};
@@ -117,12 +129,10 @@ CardStackStyling.InteractiveStyle.oMultipleDragCardStack = new function()
 
 function CardStack(poCardStackVisualStyle, poCardStackInteractiveStyle)
 {
-	this.bBeingMoved = false;
-	
 	var mtoCards = [];
 	var mfPositionX = 0.0;
 	var mfPositionY = 0.0;
-	var moDrawComponent = goDrawManagerInstance.addComponent(this, 0);
+	var moDrawComponent = goDrawManager.addComponent(this, 0);
 	var moBackgroundImage; // Initialize later
 	var moVisualStyle = poCardStackVisualStyle;
 	var moInteractiveStyle = poCardStackInteractiveStyle;
@@ -144,6 +154,11 @@ function CardStack(poCardStackVisualStyle, poCardStackInteractiveStyle)
 		moBackgroundImage.src = moVisualStyle.sBackgroundImagePath;
 	}
 	
+	this.getDrawComponent = function()
+	{
+		return moDrawComponent;
+	}
+	
 	this.setPosition = function(pfNewPositionX, pfNewPositionY)
 	{
 		mfPositionX = pfNewPositionX;
@@ -155,6 +170,15 @@ function CardStack(poCardStackVisualStyle, poCardStackInteractiveStyle)
 		
 		this.updateCardSlotRectangle();
 	};
+	
+	this.destroy = function()
+	{
+		if(moDrawComponent != null)
+		{
+			goDrawManager.removeComponent(this);
+			moDrawComponent = null;
+		}
+	}
 	
 	this.positionCard = function(poCard, Index)
 	{
@@ -255,20 +279,20 @@ function CardStack(poCardStackVisualStyle, poCardStackInteractiveStyle)
 		{
 			poCanvas.drawImage(moBackgroundImage, mfPositionX, mfPositionY);
 		}
-		if(this.bBeingMoved)
+		if(moVisualStyle.bUseAlpha)
 		{
 			poCanvas.save();
 		}
 		for(i = 0; i < mtoCards.length; ++i)
 		{
-			if(this.bBeingMoved)
+			if(moVisualStyle.bUseAlpha)
 			{
-				poCanvas.globalAlpha = 0.5 / (mtoCards.length - i);
+				poCanvas.globalAlpha = moVisualStyle.fAlphaMultiplier / (mtoCards.length - i);
 			}
 			mtoCards[i].draw(poCanvas, i == mtoCards.length - 1);
 		}
 		
-		if(this.bBeingMoved)
+		if(moVisualStyle.bUseAlpha)
 		{
 			poCanvas.restore();
 		}
